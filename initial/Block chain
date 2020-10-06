@@ -22,7 +22,7 @@ class Blockchain:
         block={
             'index' : len(self.chain)+1,
             'timestamp' : str(datetime.datetime.now()),
-            'proof' : str(proof),
+            'proof' : proof,
             'previous_hash' : previous_hash
             }
         self.chain.append(block)
@@ -51,7 +51,7 @@ class Blockchain:
         b_index=1
         while b_index< len(chain):
             block= chain[b_index]
-            if block['previous_hash']!=self.hash(pre_block):
+            if block['previous_hash']!=self.HASH(pre_block):
                 return False
             pre_proof = pre_block['proof']
             proof=block['proof']
@@ -62,11 +62,42 @@ class Blockchain:
             b_index=b_index+1
         return True
              
+            
              
+app=Flask(__name__)
+blockchain = Blockchain()
+
+@app.route ('/mine_block',methods=['GET'])
+def mine_block() :
+    pre_block=blockchain.get_preblock()
+    pre_proof=pre_block['proof']
+    proof=blockchain.proof_OW(pre_proof)
+    block=blockchain.create_block(proof, blockchain.HASH(pre_block))
+    response= { 'msg': 'congrats you just mined the block',
+               'index': block['index'],
+               'proof': block['proof'],
+               'timestamp' : block['timestamp'],
+               'previous_hash' : block['previous_hash']
+               }
+    return jsonify(response),200
+    
         
+@app.route ('/get_chain', methods = ['GET'])     
+def get_chain() :
+    response = {'chain': blockchain.chain,
+                'length': len(blockchain.chain)
+                }
+    return jsonify(response),200
              
+
+@app.route ('/is_valid', methods = ['GET'])     
+def is_valid() :
+    response ={'msg':'BLOCK CHAIN IS VALID'}
+    if blockchain.is_bc_valid(blockchain.chain) == False:
+        response['msg']='Probelem has been detected'
+    return jsonify(response),200
              
-             
+app.run(host= '0.0.0.0', port=9000)
              
              
              
